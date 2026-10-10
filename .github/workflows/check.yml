@@ -1,0 +1,36 @@
+name: Todo checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  todo-check:
+    name: Todo regression check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out this change
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Run required checks
+        run: node sort-review-check.cjs
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo '::error title=待办清单检查失败::本次变更未通过必需检查。请查看上方错误，修复后重新运行；任务尚未完成。'
+          echo '## 检查失败：任务尚未完成' >> "$GITHUB_STEP_SUMMARY"
+          echo '请查看失败步骤的完整错误，修复后重新运行。' >> "$GITHUB_STEP_SUMMARY"
+          exit 1
