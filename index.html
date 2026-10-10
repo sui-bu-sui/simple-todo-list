@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>sui-bu-sui的办事清单</title>
+  <style>
+    /* CSS：设置页面的颜色、间距与排列。 */
+    :root {
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      color: #25352e;
+      background: #f5f7f4;
+      --green: #347255;
+      --line: #e2e8e1;
+      --muted: #657369;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .page {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+      padding: 56px 28px 40px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .heading { display: flex; align-items: center; gap: 18px; }
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      border-radius: 16px;
+      background: #e5efe5;
+      color: var(--green);
+      font-size: 27px;
+    }
+
+    h1 { margin: 0; font-size: clamp(22px, 3.4vw, 32px); letter-spacing: -0.5px; }
+    .subtitle { margin: 9px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .button {
+      min-height: 44px;
+      padding: 10px 19px;
+      border: 1px solid #d5dfd3;
+      border-radius: 10px;
+      background: #fff;
+      color: #3c5545;
+      white-space: nowrap;
+    }
+    .button:hover { background: #edf3ec; }
+    .button-primary { background: var(--green); border-color: var(--green); color: #fff; }
+    .button-primary:hover { background: #285b42; }
+    .button:focus-visible, input:focus-visible {
+      outline: 3px solid #8aaf93;
+      outline-offset: 3px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 8px 28px #25352e05;
+    }
+    .entry { padding: 25px 26px 27px; margin-bottom: 28px; }
+    h2 { margin: 0; font-size: 17px; font-weight: 600; }
+    .entry-fields {
+      display: grid;
+      grid-template-columns: minmax(200px, 1fr) minmax(180px, 1.25fr) minmax(160px, 1fr) auto;
+      gap: 16px;
+      align-items: end;
+      margin-top: 22px;
+    }
+    .field { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+    label { font-size: 13px; color: #43574a; font-weight: 600; }
+    .optional { margin-left: 5px; font-size: 12px; font-weight: 400; color: var(--muted); }
+    input {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      padding: 10px 12px;
+      border: 1px solid #d9e1d8;
+      border-radius: 9px;
+      background: #fff;
+      color: #25352e;
+      font-size: 14px;
+    }
+    input::placeholder { color: #7a857c; }
+    input[aria-invalid="true"] { border-color: #b94734; }
+    .field-error { margin: 12px 0 0; color: #a43828; font-size: 13px; }
+    .field-success { margin: 12px 0 0; color: var(--green); font-size: 13px; }
+
+    .list-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 0 2px 15px;
+    }
+    .list-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
+    .sort-control { display: flex; align-items: center; gap: 10px; }
+    .sort-switch {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      width: 116px;
+      height: 36px;
+      padding: 3px;
+      border: 1px solid #cbdccc;
+      border-radius: 19px;
+      background: #edf3ed;
+      color: #64736a;
+    }
+    .sort-switch::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: calc(50% - 3px);
+      height: 28px;
+      border-radius: 16px;
+      background: var(--green);
+      box-shadow: 0 2px 5px #1c4d312a;
+      transition: transform 180ms ease;
+    }
+    .sort-switch[aria-checked="true"]::before { transform: translateX(54px); }
+    .sort-switch span { position: relative; z-index: 1; font-size: 13px; font-weight: 600; }
+    .sort-switch[aria-checked="false"] .sort-auto,
+    .sort-switch[aria-checked="true"] .sort-manual { color: #fff; }
+    .sort-switch:focus-visible, .drag-handle:focus-visible {
+      outline: 3px solid #8aaf93;
+      outline-offset: 3px;
+    }
+    .sort-hint { margin: 0; color: var(--muted); font-size: 12px; }
+    .sort-storage-message { margin: 0 2px 14px; }
+    .legend { display: flex; gap: 18px; color: var(--muted); font-size: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #87918b; }
+    .dot-green { background: var(--green); }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; }
+    th {
+      padding: 17px 20px;
+      background: #f8faf7;
+      border-bottom: 1px solid var(--line);
+      color: #607064;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .column-complete { width: 104px; text-align: center; }
+    .column-time { width: 280px; }
+    .column-task { width: 35%; }
+    td {
+      padding: 17px 20px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+      overflow-wrap: anywhere;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    .task-row { position: relative; background: #f0f2f1; color: #59635d; }
+    .task-row.is-completed { background: #e3f2e7; color: #245b38; }
+    .history-group td {
+      padding: 17px 20px;
+      background: #fff;
+      border-top: 2px solid #d9e5d9;
+      border-bottom: 1px solid var(--line);
+    }
+    .history-group-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .history-group-title { margin: 0; font-size: 14px; font-weight: 600; color: #3c5545; }
+    .history-group-range { color: var(--muted); font-size: 12px; }
+    .task-time-cell, .task-note-cell { padding: 12px; }
+    .task-time-editor, .task-note-editor {
+      height: 40px;
+      padding: 7px 8px;
+      border-color: transparent;
+      background: transparent;
+      color: inherit;
+    }
+    .task-time-editor:hover, .task-time-editor:focus,
+    .task-note-editor:hover, .task-note-editor:focus {
+      border-color: #becdbc;
+      background: #ffffffb3;
+    }
+    .task-checkbox {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      padding: 0;
+      accent-color: var(--green);
+      vertical-align: middle;
+    }
+    .complete-controls { display: flex; align-items: center; justify-content: center; gap: 9px; }
+    .drag-handle {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 32px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #597364;
+      font-size: 20px;
+      line-height: 1;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    .drag-handle:hover { background: #dbe8dd; color: #245b38; }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-placeholder td { opacity: .32; border-top: 3px dashed var(--green); }
+    .drag-ghost {
+      position: fixed;
+      z-index: 1000;
+      border-collapse: collapse;
+      table-layout: fixed;
+      pointer-events: none;
+      box-shadow: 0 14px 32px #25352e38;
+      opacity: .96;
+    }
+    .drag-ghost td { border-bottom: 0; }
+    body.is-dragging, body.is-dragging * { cursor: grabbing !important; }
+    .task-card { overflow: hidden; }
+    .empty-state { padding: 56px 22px 60px; text-align: center; }
+    .empty-icon {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 17px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: #738777;
+      font-size: 22px;
+      background: #f8faf7;
+    }
+    .empty-title { margin: 0; font-size: 15px; color: #5d7062; }
+    .empty-description { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 850px) {
+      .entry-fields { grid-template-columns: 1fr 1fr; }
+      .entry-fields .button { justify-self: start; }
+    }
+    @media (max-width: 560px) {
+      .page { padding: 28px 16px; }
+      .page-header { align-items: flex-start; flex-direction: column; gap: 18px; }
+      .heading { gap: 12px; }
+      .mark { width: 42px; height: 42px; border-radius: 12px; }
+      .entry { padding: 21px 18px; }
+      .entry-fields { grid-template-columns: 1fr; }
+      .entry-fields .button { width: 100%; }
+      .list-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sort-switch::before { transition-duration: 0.01ms; }
+    }
+  </style>
+</head>
+<body>
+  <!-- HTML：放置标题、输入区域、按钮和任务列表。 -->
+  <main class="page">
+    <header class="page-header">
+      <div class="heading">
+        <span class="mark" aria-hidden="true">✓</span>
+        <div>
+          <h1>sui-bu-sui的办事清单</h1>
+          <p class="subtitle">把要做的事写下来，一件一件完成。</p>
+        </div>
+      </div>
+      <button class="button" id="history-button" type="button" aria-controls="task-list">往期事项</button>
+    </header>
+
+    <section class="card entry" aria-labelledby="entry-title">
+      <h2 id="entry-title">添加一件待办事项</h2>
+      <div class="entry-fields">
+        <div class="field">
+          <label for="task-time">日期和时间</label>
+          <input id="task-time" type="datetime-local">
+        </div>
+        <div class="field">
+          <label for="task-text">待办事项</label>
+          <input id="task-text" type="text" placeholder="例如：学习网页开发" aria-describedby="task-error">
+        </div>
+        <div class="field">
+          <label for="task-note">备注<span class="optional">选填</span></label>
+          <input id="task-note" type="text" placeholder="补充说明">
+        </div>
+        <button class="button button-primary" id="add-button" type="button">添加</button>
+      </div>
+      <p class="field-error" id="task-error" role="alert" hidden>请输入待办事项</p>
+      <p class="field-error" id="storage-message" role="alert" hidden></p>
+      <p class="field-success" id="task-feedback" role="status" hidden></p>
+    </section>
+
+    <section aria-labelledby="list-title">
+      <div class="list-heading">
+        <h2 id="list-title">待办清单</h2>
+        <div class="list-controls">
+          <div class="sort-control">
+            <button class="sort-switch" id="sort-switch" type="button" role="switch" aria-checked="false" aria-label="手动排序" aria-describedby="sort-hint">
+              <span class="sort-auto">自动</span><span class="sort-manual">手动</span>
+            </button>
+            <p class="sort-hint" id="sort-hint">未完成在前，已完成在后</p>
+          </div>
+          <div class="legend" aria-label="任务状态说明">
+            <span class="legend-item"><span class="dot" aria-hidden="true"></span>未完成</span>
+            <span class="legend-item"><span class="dot dot-green" aria-hidden="true"></span>已完成</span>
+          </div>
+        </div>
+      </div>
+      <p class="field-error sort-storage-message" id="sort-storage-message" role="alert" hidden></p>
+      <div class="card task-card">
+        <div class="table-scroll">
+          <table aria-labelledby="list-title">
+            <thead>
+              <tr>
+                <th class="column-complete" scope="col">完成</th>
+                <th class="column-time" scope="col">日期和时间</th>
+                <th class="column-task" scope="col">待办事项</th>
+                <th scope="col">备注</th>
+              </tr>
+            </thead>
+            <!-- JavaScript 会把新任务显示在这里。 -->
+            <tbody id="task-list"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon" aria-hidden="true">≡</div>
+          <p class="empty-title" id="empty-title">暂无待办事项</p>
+          <p class="empty-description" id="empty-description">今天和未来的任务会显示在这里。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // JavaScript：读取输入内容，显示任务，并处理完成状态。
+    const taskTimeInput = document.getElementById('task-time');
+    const taskTextInput = document.getElementById('task-text');
+    const taskNoteInput = document.getElementById('task-note');
+    const taskError = document.getElementById('task-error');
+    const storageMessage = document.getElementById('storage-message');
+    const taskFeedback = document.getElementById('task-feedback');
+    const addButton = document.getElementById('add-button');
+    const historyButton = document.getElementById('history-button');
+    const sortSwitch = document.getElementById('sort-switch');
+    const sortHint = document.getElementById('sort-hint');
+    const sortStorageMessage = document.getElementById('sort-storage-message');
+    const listTitle = document.getElementById('list-title');
+    const taskList = document.getElementById('task-list');
+    const emptyState = document.getElementById('empty-state');
+    const emptyTitle = document.getElementById('empty-title');
+    const emptyDescription = document.getElementById('empty-description');
+    const STORAGE_KEY = 'sui-bu-sui-todo:v1';
+    const SORT_STORAGE_KEY = 'sui-bu-sui-todo:sort:v1';
+    let storageReadFailed = false;
+    const tasks = loadTasks();
+    let nextTaskId = tasks.reduce((largest, task) => Math.max(largest, task.id), 0) + 1;
+    let currentView = 'home';
+    let sortMode = 'auto';
+    const HISTORY_GROUPS = [
+      { title: '一天前', range: '1 天前', maxDays: 1 },
+      { title: '最近一周', range: '2～7 天前', maxDays: 7 },
+      { title: '一周以前', range: '8～30 天前', maxDays: 30 },
+      { title: '一个月以前', range: '31～90 天前', maxDays: 90 },
+      { title: '三个月以前', range: '91～365 天前', maxDays: 365 },
+      { title: '一年以前', range: '366 天前及更早', maxDays: Infinity }
+    ];
+    let manualOrder = [];
+    let manualOrderStarted = false;
+    let dragState = null;
+
+    // 浏览器本地保存：读取时检查字段，避免损坏的数据影响页面。
+    function loadTasks() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === null) return [];
+        const savedTasks = JSON.parse(saved);
+        const valid = Array.isArray(savedTasks) && savedTasks.every(task =>
+          task && Number.isSafeInteger(task.id) && task.id > 0
+          && typeof task.dateTime === 'string'
+          && typeof task.text === 'string' && task.text.trim().length > 0
+          && typeof task.note === 'string' && typeof task.completed === 'boolean'
+        );
+        if (!valid || new Set(savedTasks.map(task => task.id)).size !== savedTasks.length) {
+          throw new Error('任务数据格式不正确');
+        }
+        return savedTasks;
+      } catch {
+        // 读取失败时不覆盖已有数据，保留后续修复的机会。
+        storageReadFailed = true;
+        storageMessage.textContent = '无法读取已保存的任务，原数据暂未覆盖。';
+        storageMessage.hidden = false;
+        return [];
+      }
+    }
+
+    function saveTasks() {
+      if (storageReadFailed) return false;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        storageMessage.hidden = true;
+        return true;
+      } catch {
+        storageMessage.textContent = '当前更改无法保存，刷新后可能丢失。请检查浏览器是否允许保存数据。';
+        storageMessage.hidden = false;
+        return false;
+      }
+    }
+
+    // 使用电脑的本地时间，格式与日期时间输入框一致。
+    function getLocalDateTime(date = new Date()) {
+      const pad = number => String(number).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+        + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    // 只比较电脑本地日期：今天的任务不属于往期。
+    function isPastTask(task, today = getLocalDateTime().slice(0, 10)) {
+      const taskDate = task.dateTime.slice(0, 10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(taskDate) && taskDate < today;
+    }
+
+    function getHistoryGroupIndex(task, today = getLocalDateTime().slice(0, 10)) {
+      if (!isPastTask(task, today)) return -1;
+      const [year, month, day] = task.dateTime.slice(0, 10).split('-').map(Number);
+      const [todayYear, todayMonth, todayDay] = today.split('-').map(Number);
+      // 用日历日期计算相隔天数，任务小时与夏令时不会改变分组。
+      const daysAgo = (Date.UTC(todayYear, todayMonth - 1, todayDay)
+        - Date.UTC(year, month - 1, day)) / 86400000;
+      return HISTORY_GROUPS.findIndex(group => daysAgo <= group.maxDays);
+    }
+
+    function getAutoOrder(today = getLocalDateTime().slice(0, 10)) {
+      return [...tasks].sort((first, second) => {
+        const viewOrder = Number(isPastTask(first, today)) - Number(isPastTask(second, today));
+        const groupOrder = isPastTask(first, today) && isPastTask(second, today)
+          ? getHistoryGroupIndex(first, today) - getHistoryGroupIndex(second, today) : 0;
+        return viewOrder || groupOrder || Number(first.completed) - Number(second.completed)
+          || first.id - second.id;
+      }).map(task => task.id);
+    }
+
+    function loadSortPreferences() {
+      const initialOrder = getAutoOrder();
+      try {
+        const saved = localStorage.getItem(SORT_STORAGE_KEY);
+        if (saved === null) return { mode: 'auto', order: initialOrder, started: false };
+        const value = JSON.parse(saved);
+        if (!value || !['auto', 'manual'].includes(value.mode)
+          || !Array.isArray(value.order)
+          || !value.order.every(id => Number.isSafeInteger(id) && id > 0)
+          || new Set(value.order).size !== value.order.length) {
+          throw new Error('排序数据格式不正确');
+        }
+        const existingIds = new Set(initialOrder);
+        const order = value.order.filter(id => existingIds.has(id));
+        const orderedIds = new Set(order);
+        return {
+          mode: value.mode,
+          order: order.concat(initialOrder.filter(id => !orderedIds.has(id))),
+          started: value.started === true || value.mode === 'manual'
+        };
+      } catch {
+        // 排序记录损坏时只恢复排序，不修改任务存储。
+        sortStorageMessage.textContent = '无法读取排序设置，已恢复自动排序；任务数据仍然保留。';
+        sortStorageMessage.hidden = false;
+        return { mode: 'auto', order: initialOrder, started: false };
+      }
+    }
+
+    function saveSortPreferences() {
+      try {
+        localStorage.setItem(SORT_STORAGE_KEY, JSON.stringify({
+          mode: sortMode, order: manualOrder, started: manualOrderStarted
+        }));
+        sortStorageMessage.hidden = true;
+        return true;
+      } catch {
+        sortStorageMessage.textContent = '当前排序无法保存，刷新后可能丢失。请检查浏览器是否允许保存数据。';
+        sortStorageMessage.hidden = false;
+        return false;
+      }
+    }
+
+    function moveManualTaskToEnd(taskId) {
+      manualOrder = manualOrder.filter(id => id !== taskId);
+      manualOrder.push(taskId);
+      saveSortPreferences();
+    }
+
+    function getTaskScope(task, today = getLocalDateTime().slice(0, 10)) {
+      return isPastTask(task, today) ? `history-${getHistoryGroupIndex(task, today)}` : 'home';
+    }
+
+    function getScopeRows(scope) {
+      return Array.from(taskList.querySelectorAll('.task-row'))
+        .filter(row => row.dataset.scope === scope);
+    }
+
+    function animateRowsFrom(previousPositions, rows, duration = 180) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      for (const row of rows) {
+        const previous = previousPositions.get(row);
+        if (!previous || typeof row.animate !== 'function') continue;
+        const distance = previous.top - row.getBoundingClientRect().top;
+        if (Math.abs(distance) > 1) {
+          row.animate(
+            [{ transform: `translateY(${distance}px)` }, { transform: 'translateY(0)' }],
+            { duration, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+          );
+        }
+      }
+    }
+
+    function commitManualScopeOrder(scope) {
+      const scopeIds = getScopeRows(scope).map(row => Number(row.dataset.taskId));
+      const idsInScope = new Set(scopeIds);
+      let nextIndex = 0;
+      manualOrder = manualOrder.map(id => idsInScope.has(id) ? scopeIds[nextIndex++] : id);
+      saveSortPreferences();
+    }
+
+    function moveRowToPointer(clientY) {
+      if (!dragState) return;
+      const { row, scope } = dragState;
+      const peers = getScopeRows(scope).filter(peer => peer !== row);
+      const before = peers.find(peer => clientY < peer.getBoundingClientRect().top
+        + peer.getBoundingClientRect().height / 2);
+      const next = row.nextElementSibling;
+      if ((before && next === before) || (!before && next && next.dataset.scope !== scope)
+        || (!before && !next)) return;
+      const rows = getScopeRows(scope);
+      const previousPositions = new Map(rows.map(peer => [peer, peer.getBoundingClientRect()]));
+      if (before) {
+        taskList.insertBefore(row, before);
+      } else if (peers.length) {
+        peers[peers.length - 1].after(row);
+      }
+      animateRowsFrom(previousPositions, rows.filter(peer => peer !== row));
+    }
+
+    function updateGhostPosition() {
+      if (!dragState) return;
+      const { ghost, startX, startY, lastX, lastY } = dragState;
+      ghost.style.transform = `translate(${lastX - startX}px, ${lastY - startY}px)`;
+    }
+
+    function getDraggedCenterY() {
+      const { startRect, startY, lastY } = dragState;
+      return startRect.top + startRect.height / 2 + lastY - startY;
+    }
+
+    function dragAutoScroll() {
+      if (!dragState) return;
+      const edge = 72;
+      const y = dragState.lastY;
+      const speed = y < edge ? -Math.min(18, (edge - y) / 4)
+        : y > innerHeight - edge ? Math.min(18, (y - innerHeight + edge) / 4) : 0;
+      if (speed) {
+        window.scrollBy(0, speed);
+        moveRowToPointer(getDraggedCenterY());
+      }
+      dragState.scrollFrame = requestAnimationFrame(dragAutoScroll);
+    }
+
+    function finishDrag(cancel = false) {
+      if (!dragState) return;
+      const { row, scope, ghost, captureTarget, pointerId, originalNext, originalPrevious, scrollFrame } = dragState;
+      cancelAnimationFrame(scrollFrame);
+      document.removeEventListener('pointermove', onDragMove);
+      document.removeEventListener('pointerup', onDragEnd);
+      document.removeEventListener('pointercancel', onDragCancel);
+      document.removeEventListener('keydown', onDragKeyDown);
+      window.removeEventListener('blur', onWindowBlur);
+      captureTarget.removeEventListener('lostpointercapture', onLostPointerCapture);
+      if (captureTarget.hasPointerCapture(pointerId)) captureTarget.releasePointerCapture(pointerId);
+      if (cancel) {
+        if (originalNext) taskList.insertBefore(row, originalNext);
+        else if (originalPrevious) originalPrevious.after(row);
+      } else {
+        commitManualScopeOrder(scope);
+      }
+      const ghostRect = ghost.getBoundingClientRect();
+      ghost.remove();
+      row.classList.remove('drag-placeholder');
+      document.body.classList.remove('is-dragging');
+      dragState = null;
+      if (!cancel && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        && typeof row.animate === 'function') {
+        const finalRect = row.getBoundingClientRect();
+        row.animate(
+          [{ transform: `translate(${ghostRect.left - finalRect.left}px, ${ghostRect.top - finalRect.top}px)` },
+            { transform: 'translate(0, 0)' }],
+          { duration: 180, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+        );
+      }
+    }
+
+    function onDragMove(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      dragState.lastX = event.clientX;
+      dragState.lastY = event.clientY;
+      updateGhostPosition();
+      moveRowToPointer(getDraggedCenterY());
+    }
+
+    function onDragEnd(event) {
+      if (dragState && event.pointerId === dragState.pointerId) finishDrag();
+    }
+
+    function onDragCancel(event) {
+      if (dragState && event.pointerId === dragState.pointerId) finishDrag(true);
+    }
+
+    function onLostPointerCapture(event) {
+      if (dragState && event.pointerId === dragState.pointerId) finishDrag(true);
+    }
+
+    function onWindowBlur() {
+      finishDrag(true);
+    }
+
+    function onDragKeyDown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        finishDrag(true);
+      }
+    }
+
+    function beginDrag(event, row) {
+      if (sortMode !== 'manual' || dragState || event.button !== 0) return;
+      event.preventDefault();
+      const startRect = row.getBoundingClientRect();
+      const ghost = document.createElement('table');
+      ghost.className = 'drag-ghost';
+      ghost.inert = true;
+      ghost.setAttribute('aria-hidden', 'true');
+      ghost.style.left = `${startRect.left}px`;
+      ghost.style.top = `${startRect.top}px`;
+      ghost.style.width = `${startRect.width}px`;
+      const ghostBody = document.createElement('tbody');
+      const ghostRow = row.cloneNode(true);
+      ghostRow.classList.remove('drag-placeholder');
+      for (let index = 0; index < row.cells.length; index++) {
+        const width = row.cells[index].getBoundingClientRect().width;
+        ghostRow.cells[index].style.width = `${width}px`;
+        const originalInput = row.cells[index].querySelector('input');
+        const ghostInput = ghostRow.cells[index].querySelector('input');
+        if (originalInput && ghostInput) {
+          if (originalInput.type === 'checkbox') ghostInput.checked = originalInput.checked;
+          else ghostInput.value = originalInput.value;
+        }
+      }
+      ghostBody.append(ghostRow);
+      ghost.append(ghostBody);
+      document.body.append(ghost);
+      const scope = row.dataset.scope;
+      const peers = getScopeRows(scope);
+      dragState = {
+        row, scope, ghost, captureTarget: document.body, startRect,
+        startX: event.clientX, startY: event.clientY,
+        lastX: event.clientX, lastY: event.clientY,
+        pointerId: event.pointerId,
+        originalNext: peers[peers.indexOf(row) + 1] || null,
+        originalPrevious: peers[peers.indexOf(row) - 1] || null,
+        scrollFrame: null
+      };
+      row.classList.add('drag-placeholder');
+      document.body.classList.add('is-dragging');
+      document.addEventListener('pointermove', onDragMove);
+      document.addEventListener('pointerup', onDragEnd);
+      document.addEventListener('pointercancel', onDragCancel);
+      document.addEventListener('keydown', onDragKeyDown);
+      window.addEventListener('blur', onWindowBlur);
+      dragState.captureTarget.addEventListener('lostpointercapture', onLostPointerCapture);
+      dragState.captureTarget.setPointerCapture(event.pointerId);
+      dragState.scrollFrame = requestAnimationFrame(dragAutoScroll);
+    }
+
+    function moveRowByKeyboard(row, direction) {
+      const scope = row.dataset.scope;
+      const peers = getScopeRows(scope);
+      const index = peers.indexOf(row);
+      const target = peers[index + direction];
+      if (!target) return;
+      const previousPositions = new Map(peers.map(peer => [peer, peer.getBoundingClientRect()]));
+      if (direction < 0) taskList.insertBefore(row, target);
+      else target.after(row);
+      animateRowsFrom(previousPositions, peers);
+      commitManualScopeOrder(scope);
+    }
+
+    function getVisibleTasks(today = getLocalDateTime().slice(0, 10)) {
+      const manualRanks = new Map(manualOrder.map((id, index) => [id, index]));
+      return tasks.filter(task => isPastTask(task, today) === (currentView === 'history'))
+        .sort((first, second) => {
+          const groupOrder = currentView === 'history'
+            ? getHistoryGroupIndex(first, today) - getHistoryGroupIndex(second, today)
+            : 0;
+          const withinGroup = sortMode === 'manual'
+            ? (manualRanks.get(first.id) ?? Infinity) - (manualRanks.get(second.id) ?? Infinity)
+            : Number(first.completed) - Number(second.completed) || first.id - second.id;
+          return groupOrder || withinGroup || first.id - second.id;
+        });
+    }
+
+    // 先记录各行旧位置，排序后让它们从旧位置平滑移动到新位置。
+    function animateTaskMoves(previousPositions, movingTaskId) {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      for (const row of taskList.querySelectorAll('.task-row')) {
+        const previous = previousPositions.get(row.dataset.taskId);
+        if (!previous || typeof row.animate !== 'function') continue;
+        const distance = previous.top - row.getBoundingClientRect().top;
+        if (Math.abs(distance) < 1) continue;
+
+        // 被勾选的任务滑动时显示在其他任务之上。
+        row.style.zIndex = row.dataset.taskId === String(movingTaskId) ? '1' : '0';
+        const animation = row.animate(
+          [{ transform: `translateY(${distance}px)` }, { transform: 'translateY(0)' }],
+          { duration: 420, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+        );
+        const clearLayer = () => { row.style.zIndex = ''; };
+        animation.onfinish = clearLayer;
+        animation.oncancel = clearLayer;
+      }
+    }
+
+    function renderTasks(animate = false, movingTaskId = null) {
+      if (dragState) finishDrag(true);
+      const previousPositions = animate
+        ? new Map(Array.from(taskList.querySelectorAll('.task-row'), row => [row.dataset.taskId, row.getBoundingClientRect()]))
+        : new Map();
+      const rows = document.createDocumentFragment();
+      // 只筛选和排列当前列表，原始任务保留全部数据及添加顺序。
+      const today = getLocalDateTime().slice(0, 10);
+      const sortedTasks = getVisibleTasks(today);
+      const showingHistory = currentView === 'history';
+      listTitle.textContent = showingHistory ? '往期事项' : '待办清单';
+      historyButton.textContent = showingHistory ? '返回首页' : '往期事项';
+      emptyTitle.textContent = showingHistory ? '暂无往期事项' : '暂无待办事项';
+      emptyDescription.textContent = showingHistory
+        ? '过去日期的任务会显示在这里。'
+        : '今天和未来的任务会显示在这里。';
+
+      let previousGroupIndex = -1;
+      for (const task of sortedTasks) {
+        if (showingHistory) {
+          const groupIndex = getHistoryGroupIndex(task, today);
+          if (groupIndex !== previousGroupIndex) {
+            const group = HISTORY_GROUPS[groupIndex];
+            const groupRow = document.createElement('tr');
+            groupRow.className = 'history-group';
+            const groupCell = document.createElement('td');
+            groupCell.colSpan = 4;
+            const heading = document.createElement('div');
+            heading.className = 'history-group-heading';
+            const title = document.createElement('h3');
+            title.className = 'history-group-title';
+            title.textContent = group.title;
+            const range = document.createElement('span');
+            range.className = 'history-group-range';
+            range.textContent = group.range;
+            heading.append(title, range);
+            groupCell.append(heading);
+            groupRow.append(groupCell);
+            rows.append(groupRow);
+            previousGroupIndex = groupIndex;
+          }
+        }
+
+        const row = document.createElement('tr');
+        row.dataset.taskId = task.id;
+        row.dataset.scope = getTaskScope(task, today);
+        row.className = task.completed ? 'task-row is-completed' : 'task-row';
+
+        const completeCell = document.createElement('td');
+        completeCell.className = 'column-complete';
+        const completeControls = document.createElement('div');
+        completeControls.className = 'complete-controls';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'task-checkbox';
+        checkbox.checked = task.completed;
+        checkbox.setAttribute('aria-label', `标记完成：${task.text}`);
+        checkbox.addEventListener('change', () => {
+          task.completed = checkbox.checked;
+          saveTasks();
+          if (sortMode === 'manual') {
+            row.classList.toggle('is-completed', task.completed);
+          } else {
+            renderTasks(true, task.id);
+            // 排序后保持勾选框焦点，方便继续用键盘操作。
+            taskList.querySelector(`[data-task-id="${task.id}"] .task-checkbox`)
+              ?.focus({ preventScroll: true });
+          }
+        });
+        completeControls.append(checkbox);
+        if (sortMode === 'manual') {
+          const handle = document.createElement('button');
+          handle.type = 'button';
+          handle.className = 'drag-handle';
+          handle.textContent = '⠿';
+          handle.setAttribute('aria-label', `拖动排序：${task.text}。也可按上下方向键调整`);
+          handle.addEventListener('pointerdown', event => beginDrag(event, row));
+          handle.addEventListener('keydown', event => {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+              event.preventDefault();
+              moveRowByKeyboard(row, event.key === 'ArrowUp' ? -1 : 1);
+            }
+          });
+          completeControls.append(handle);
+        }
+        completeCell.append(completeControls);
+        row.append(completeCell);
+
+        const timeCell = document.createElement('td');
+        timeCell.className = 'task-time-cell';
+        const timeEditor = document.createElement('input');
+        const originalGroupIndex = showingHistory ? getHistoryGroupIndex(task, today) : -1;
+        const originalWasPast = isPastTask(task, today);
+        timeEditor.type = 'datetime-local';
+        timeEditor.className = 'task-time-editor';
+        timeEditor.value = task.dateTime;
+        timeEditor.setAttribute('aria-label', `${task.text}的日期和时间`);
+        timeEditor.addEventListener('input', () => {
+          if (timeEditor.value) {
+            task.dateTime = timeEditor.value;
+            saveTasks();
+          }
+        });
+        timeEditor.addEventListener('blur', () => {
+          // 日期未填写完整时恢复原值，完整填写后只更新当前任务的时间。
+          if (!timeEditor.value) {
+            timeEditor.value = task.dateTime;
+            return;
+          }
+          task.dateTime = timeEditor.value;
+          saveTasks();
+          // 修改往期日期后更新所属时间组；首页过去任务移入往期。
+          const groupChanged = isPastTask(task) !== originalWasPast
+            || (originalWasPast && getHistoryGroupIndex(task) !== originalGroupIndex);
+          if (groupChanged) moveManualTaskToEnd(task.id);
+          if (groupChanged) renderTasks();
+        });
+        timeCell.append(timeEditor);
+        row.append(timeCell);
+
+        // textContent 将事项当作文字显示，不会作为 HTML 执行。
+        const taskCell = document.createElement('td');
+        taskCell.textContent = task.text;
+        row.append(taskCell);
+
+        const noteCell = document.createElement('td');
+        noteCell.className = 'task-note-cell';
+        const noteEditor = document.createElement('input');
+        noteEditor.type = 'text';
+        noteEditor.className = 'task-note-editor';
+        noteEditor.value = task.note;
+        noteEditor.placeholder = '补充备注';
+        noteEditor.setAttribute('aria-label', `${task.text}的备注`);
+        noteEditor.addEventListener('input', () => {
+          task.note = noteEditor.value;
+          saveTasks();
+        });
+        noteEditor.addEventListener('blur', () => {
+          // 离开输入框时，只确认这一条任务的备注。
+          task.note = noteEditor.value.trim();
+          noteEditor.value = task.note;
+          saveTasks();
+        });
+        noteCell.append(noteEditor);
+        row.append(noteCell);
+
+        rows.append(row);
+      }
+
+      taskList.replaceChildren(rows);
+      emptyState.hidden = sortedTasks.length > 0;
+      if (animate) animateTaskMoves(previousPositions, movingTaskId);
+    }
+
+    function addTask() {
+      taskFeedback.hidden = true;
+      const text = taskTextInput.value.trim();
+      // 检查在新增与清空输入之前进行，失败时保留所有已填内容。
+      if (!text) {
+        taskError.hidden = false;
+        taskTextInput.setAttribute('aria-invalid', 'true');
+        taskTextInput.focus();
+        return;
+      }
+
+      taskError.hidden = true;
+      taskTextInput.removeAttribute('aria-invalid');
+      const newTask = {
+        id: nextTaskId++,
+        dateTime: taskTimeInput.value,
+        text,
+        note: taskNoteInput.value.trim(),
+        completed: false
+      };
+      tasks.push(newTask);
+      moveManualTaskToEnd(newTask.id);
+
+      const saved = saveTasks();
+      renderTasks();
+      if (saved && isPastTask(newTask) !== (currentView === 'history')) {
+        taskFeedback.textContent = isPastTask(newTask)
+          ? '任务已添加到往期事项。点击上方“往期事项”查看。'
+          : '任务已添加到首页。点击上方“返回首页”查看。';
+        taskFeedback.hidden = false;
+      }
+      taskTextInput.value = '';
+      taskNoteInput.value = '';
+      taskTextInput.focus();
+    }
+
+    const savedSortPreferences = loadSortPreferences();
+    sortMode = savedSortPreferences.mode;
+    manualOrder = savedSortPreferences.order;
+    manualOrderStarted = savedSortPreferences.started;
+    sortSwitch.setAttribute('aria-checked', String(sortMode === 'manual'));
+    sortHint.textContent = sortMode === 'manual'
+      ? '按住手柄调整任务顺序' : '未完成在前，已完成在后';
+    taskTimeInput.value = getLocalDateTime();
+    sortSwitch.addEventListener('click', () => {
+      sortMode = sortMode === 'auto' ? 'manual' : 'auto';
+      if (sortMode === 'manual' && !manualOrderStarted) {
+        manualOrder = getAutoOrder();
+        manualOrderStarted = true;
+      }
+      sortSwitch.setAttribute('aria-checked', String(sortMode === 'manual'));
+      sortHint.textContent = sortMode === 'manual'
+        ? '按住手柄调整任务顺序' : '未完成在前，已完成在后';
+      saveSortPreferences();
+      renderTasks(true);
+    });
+    addButton.addEventListener('click', addTask);
+    historyButton.addEventListener('click', () => {
+      currentView = currentView === 'home' ? 'history' : 'home';
+      taskFeedback.hidden = true;
+      renderTasks();
+    });
+    taskTextInput.addEventListener('input', () => {
+      if (taskTextInput.value.trim()) {
+        taskError.hidden = true;
+        taskTextInput.removeAttribute('aria-invalid');
+      }
+    });
+    renderTasks();
+  </script>
+</body>
+</html>
